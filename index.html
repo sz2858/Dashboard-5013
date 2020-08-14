@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <title>CodePen - Dashboard_Final</title>
+  <link rel='stylesheet' href='https://unpkg.com/leaflet@1.0.3/dist/leaflet.css'>
+<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css'>
+<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/css/all.min.css'>
+<link rel="stylesheet" href="./styles/styles.css">
+
+</head>
+<body>
+<!-- partial:index.partial.html -->
+<div id="app">
+
+  <!-- The core Firebase JS SDK is always required and must be listed first -->
+  <script src="https://www.gstatic.com/firebasejs/7.17.2/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/7.10.0/firebase-firestore.js"></script>
+
+  <script>
+    // Your web app's Firebase configuration
+    var firebaseConfig = {
+      apiKey: "AIzaSyDz2HupZAGwhvR-ufy8pjNEVBv3H4ur0SE",
+      authDomain: "dashboard-5013.firebaseapp.com",
+      databaseURL: "https://dashboard-5013.firebaseio.com",
+      projectId: "dashboard-5013",
+      storageBucket: "dashboard-5013.appspot.com",
+      messagingSenderId: "274593074068",
+      appId: "1:274593074068:web:f92c8ef6eee7bbf23d5d81"
+    };
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+  </script>
+
+  <aside class="side-nav" id="show-side-navigation">
+    <div class="search">
+      <input type="text" placeholder="Search here"><i class="fa fa-search"></i>
+    </div>
+
+    <div v-for="tab in tabs" @click="selectedTab = tab.title" :class="{ active : selectedTab == tab.title }" class="tab-item">
+      <h5 class="tab-item__heading">{{ tab.title }}</h5>
+    </div>
+  </aside>
+
+  <template v-if="selectedTab == 'World Count'">
+    <div class="welcome" id="world-tab">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="content">
+              <h2>COVID-19 Tracker</h2>
+              <p>As of July 2020, the coronavirus disease (COVID-19) had been confirmed in around 210 countries and territories around the world. There had been over 15.66 million cases and around 628,184 deaths.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="statis text-center">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-md-4">
+            <div class="box prim">
+              <i class="fa fa-check-circle"></i>
+              <h4>20,162,474</h4>
+              <p class="lead">Active Cases</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="box dang">
+              <i class="fa fa-times-circle"></i>
+              <h4>737,417</h4>
+              <p class="lead">Fatalities</p>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="box succ">
+              <i class="fa fa-heart"></i>
+              <h4>13,449,101</h4>
+              <p class="lead">Recoveries</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="charts">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col">
+            <div class="chart-container">
+              <h3>World Count (Weekly)</h3>
+              <line-chart></line-chart>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <template v-if="selectedTab == 'USA Count'">
+    <choropleth-map id="usa-map" :data="mapData" title-key="regionName" id-key="regionId" :value="value" :extra-values="extraValues" :geojson="geoJson" geojson-id-key="id" :center="center" :color-scale="colorScale" map-style="height: 100%; width: 100%;" :zoom="4" :map-options="mapOptions">
+      <template scope="props">
+        <info-control :item="props.currentItem" :unit="props.unit" title="Total Cases & Fatalities" placeholder="hover over a state" position="topright">
+        </info-control>
+        <reference-chart title="____________________" :color-scale="colorScale" :min="0" :max="40000000" position="bottomright">
+        </reference-chart>
+      </template>
+    </choropleth-map>
+  </template>
+
+  <template v-if="selectedTab == 'Symptoms Checker'">
+    <div class="welcome" id="sc">
+      <div class="container-fluid">
+        <div class="row">
+          <div class="col-md-12">
+            <div class="content">
+              <h2>COVID-19 Symptom Checker</h2>
+              <p>This checker helps people living in Singapore decide on what their next steps should be, based on the symptoms being experienced. This checker records participants' responses but does not identify you.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <section class="checker">
+      <div class="container-fluid" id="sq">
+        <div class="row">
+          <div class="col"><br>
+            <h4>{{ quiz.title }}</h4>
+            <br>
+            <div class="callout">
+              <div v-for="(question, index) in quiz.questions">
+                <div v-show="index === questionIndex">
+                  <h5>{{ question.text }}</h5>
+                  <h6>{{ question.subtext }}</h6>
+                  <ol>
+                    <li v-for="response in question.responses">
+                      <label>
+                        <input type="radio" v-bind:value="response.value" v-bind:name="index" v-model="userResponses[index]"> {{response.text}}
+                      </label>
+                    </li>
+                  </ol>
+                  <button class="btn btn-secondary" v-if="questionIndex > 0" v-on:click="prev">prev</button>
+                  <button class="btn btn-primary" v-on:click="next">next</button>
+                </div>
+              </div>
+
+              <div v-show="questionIndex === quiz.questions.length" id="reco">
+                <h4>Recommendation</h4>
+                <p> {{ score() }}</p>
+                <br>
+                <table class="table" id="reco-table">
+                  <tr>
+                    <th>Clinics</th>
+                    <th>Average Rating</th>
+                    <th>Category</th>
+                    <th>Price</th>
+                  </tr>
+
+                  <tr v-for="clinic in clinics" :key="clinic.name">
+                    <td>{{ clinic.name }}</td>
+                    <td>{{ clinic.avgRating }}</td>
+                    <td>{{ clinic.category }}</td>
+                    <td>{{ clinic.price }}</td>
+                  </tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <template v-if="selectedTab == 'Pandemic Timeline'">
+    <section class="statis text-center">
+      <h2 class="timeline-title">COVID 19 Timeline</h2>
+      <hr>
+      <div class="timeline">
+        <ul>
+          <li>
+            <div class="time">
+              <h4>December 2020</h4>
+            </div>
+            <div class="content">
+              <h3>Covid Strikes</h3>
+              <p>Dec 29: Wuhan city government starts tracing cases</p>
+            </div>
+          </li>
+          <li>
+            <div class="time">
+              <h4>January 2020</h4>
+            </div>
+            <div class="content">
+              <h3>Shanghai detects coronavirus similar to SARS</h3>
+              <p>Jan 7: Pathogen identified as novel coronavirus</p>
+              <p>Jan 13: Incubation period identified as 14 days</p>
+              <p class="text-danger">Jan 23: Wuhan placed under quarentine</p>
+            </div>
+          </li>
+          <li>
+            <div class="time">
+              <h4>February 2020</h4>
+            </div>
+            <div class="content">
+              <h3>Hubai Province incorporated diagnostic change</h3>
+              <p>Feb 3: First Wuhan field hospital opens and more hospitals open over night</p>
+              <p>Feb 5: Diagnostic criteria expanded</p>
+              <p>Feb 14: Wuhan asks recovered patienst to donate plasma</p>
+              <p>Feb 24: China bands trade, consumption of wild animals, and postpones annual parliamentary meeting</p>
+              <p>Feb 29: China/WHO joint investigation report on COVID 19 published</p>
+            </div>
+          </li>
+          <li>
+            <div class="time">
+              <h4>March 2020</h4>
+            </div>
+            <div class="content">
+              <h3>China - WHO joint investigation report on COVID-19</h3>
+            </div>
+          </li>
+          <li>
+            <div class="time">
+              <h4>April 2020</h4>
+            </div>
+            <div class="content">
+              <h3>China issued revise case and death count</h3>
+            </div>
+          </li>
+          <li>
+            <div class="time">
+              <h4>May 2020</h4>
+            </div>
+            <div class="content">
+              <h3>What is Lorem Ipsum?</h3>
+            </div>
+          </li>
+          <li>
+            <div class="time">
+              <h4>June 2020</h4>
+            </div>
+            <div class="content">
+              <h3>What is Lorem Ipsum?</h3>
+            </div>
+          </li>
+          <li>
+            <div class="time">
+              <h4>July 2020</h4>
+            </div>
+            <div class="content">
+              <h3>What is Lorem Ipsum?</h3>
+            </div>
+          </li>
+          <li>
+            <div class="time">
+              <h4>August 2020</h4>
+            </div>
+            <div class="content">
+              <h3>What is Lorem Ipsum?</h3>
+            </div>
+          </li>
+          <div style="clear:both;"></div>
+        </ul>
+      </div>
+    </section>
+  </template>
+</div>
+<!-- partial -->
+  <script src='https://unpkg.com/leaflet@1.0.3/dist/leaflet.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/vue/2.2.4/vue.js'></script>
+<script src='https://unpkg.com/vue2-leaflet@0.0.57/dist/vue2-leaflet.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/chroma-js/1.3.4/chroma.min.js'></script>
+<script src='https://cdn.jsdelivr.net/npm/vue-choropleth@0.0.4/dist/vue-choropleth.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/axios/0.17.1/axios.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.9.3/Chart.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/vue/2.6.11/vue.min.js'></script>
+<script src='https://cdnjs.cloudflare.com/ajax/libs/vue-chartjs/3.5.0/vue-chartjs.min.js'></script>
+<script  src="./scripts/script.js"></script>
+
+</body>
+</html>

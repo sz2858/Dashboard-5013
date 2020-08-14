@@ -283,29 +283,7 @@ new Vue({
     selectTab() {
       this.selectedTab = this.tab.title;
     },
-    next: function () {
-      this.questionIndex++;
-      console.log(this.userResponses);
-    },
-    // Go to previous question
-    prev: function () {
-      this.questionIndex--;
-    },
-    score: function () {
-      //find the highest occurence in responses
-      var modeMap = {};
-      var maxEl = this.userResponses[0],
-        maxCount = 1;
-      for (var i = 0; i < this.userResponses.length; i++) {
-        var el = this.userResponses[i];
-        if (modeMap[el] == null) modeMap[el] = 1;
-        else modeMap[el]++;
-        if (modeMap[el] > maxCount) {
-          maxEl = el;
-          maxCount = modeMap[el];
-        }
-      }
-      return maxEl;
+   
     },
     getGeoJson() {
       axios
